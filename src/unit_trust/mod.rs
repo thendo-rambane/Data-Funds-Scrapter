@@ -6,6 +6,7 @@ use statutory_info::StatutoryData;
 #[derive(Debug)]
 pub struct UnitTrust {
     formation_date: String,
+    is_reg_28_comliant: bool,
     fund_size: usize,
     domicile: String,
     reporting_currency: String,
@@ -15,6 +16,7 @@ pub struct UnitTrust {
     number_of_unit_holders: u32,
     asisa_category: String,
     benchmark: String,
+    name: String,
     income_distributions: String,
     income_payment: String,
     fund_management: String,
@@ -31,7 +33,9 @@ impl UnitTrust {
         UnitTrust {
             formation_date: "".to_owned(),
             fund_size: 0,
+            is_reg_28_comliant: false,
             domicile: "".to_owned(),
+            name: "".to_owned(),
             reporting_currency: "".to_owned(),
             jse_code: "".to_owned(),
             isin: "".to_owned(),
@@ -76,48 +80,50 @@ impl UnitTrust {
                 .unwrap_or(0)
         }
         for (key, value) in hash_map.iter() {
-            match (key.as_str(), value) {
-                ("Formation Date", _) => {
+            match key.as_str() {
+                "Formation Date" => {
                     unit_trust.formation_date = value.trim().into();
                 }
-                ("Fund Size", _) => {
+                "Fund Size" => {
                     unit_trust.fund_size = process_value(value);
                 }
-                ("Domicile", _) => unit_trust.domicile = value.trim().into(),
-                ("Reporting Currency", _) => {
+                "Domicile" => unit_trust.domicile = value.trim().into(),
+                "Reporting Currency" => {
                     unit_trust.reporting_currency = value.trim().into()
                 }
-                ("JSE Code", _) => unit_trust.jse_code = value.trim().into(),
-                ("ISIN", _) => unit_trust.isin = value.trim().into(),
-                ("Number of unitholders", _) => {
+                "JSE Code" => unit_trust.jse_code = value.trim().into(),
+                "ISIN" => unit_trust.isin = value.trim().into(),
+                "Number of unitholders" => {
                     unit_trust.number_of_unit_holders =
                         process_value(value) as u32
                 }
-                ("Pricing", _) => unit_trust.pricing = value.trim().into(),
-                ("ASISA Category", _) => {
+                "Pricing" => unit_trust.pricing = value.trim().into(),
+                "ASISA Category" => {
                     unit_trust.asisa_category = value.trim().into()
                 }
-                ("Benchmark", _) => unit_trust.benchmark = value.trim().into(),
-                ("Income Distributions", _) => {
+                "Benchmark" => unit_trust.benchmark = value.trim().into(),
+                "Income Distributions" => {
                     unit_trust.income_distributions = value.trim().into()
                 }
-                ("Income Payment", _) => {
+                "Income Payment" => {
                     unit_trust.income_payment = value.trim().into()
                 }
-                ("Fund Management", _) => {
+                "Fund Management" => {
                     unit_trust.fund_management = value.trim().into()
                 }
-                ("Minimum Investment", _) => {
+                "Minimum Investment" => {
                     unit_trust.minimum_investment = process_value(value) as u32
                 }
-                ("Minimum Top-Up", _) => {
+                "Minimum Top-Up" => {
                     unit_trust.minimum_top_up = process_value(value) as u32
                 }
-                ("Minimum Monthly", _) => {
+                "Minimum Monthly" => {
                     unit_trust.minimum_monthly = process_value(value) as u32
                 }
-                ("Risk Rating", _) => {
-                    unit_trust.risk_rating = value.trim().into()
+                "Risk Rating" => unit_trust.risk_rating = value.trim().into(),
+                "name" => unit_trust.name = value.trim().into(),
+                "reg 28 compliant" => {
+                    unit_trust.is_reg_28_comliant = value.as_str() == "true"
                 }
                 _ => {}
             }

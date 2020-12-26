@@ -35,15 +35,15 @@ fn get_links(url: &str) -> Vec<String> {
         .collect()
 }
 
-fn get_fees_and_costs(url: &str) -> std::collections::HashMap<String, String> {
-    let document = get_document(&url);
+fn get_fees_and_costs(
+    document: &scraper::html::Html,
+) -> std::collections::HashMap<String, String> {
     let detail_selector =
         scraper::Selector::parse("#FeesAndCosts_DivFundDetails").unwrap();
     let table_row_selector = scraper::Selector::parse("tr").unwrap();
     let cell_selector = scraper::Selector::parse("td").unwrap();
     let strong_selector = scraper::Selector::parse("strong").unwrap();
     document
-        .unwrap()
         .select(&detail_selector)
         .next()
         .unwrap()
@@ -68,14 +68,14 @@ fn get_fees_and_costs(url: &str) -> std::collections::HashMap<String, String> {
         })
         .collect::<std::collections::HashMap<_, _>>()
 }
-fn get_statutory_data(url: &str) -> std::collections::HashMap<String, String> {
-    let document = get_document(&url);
+fn get_statutory_data(
+    document: &scraper::html::Html,
+) -> std::collections::HashMap<String, String> {
     let detail_selector =
         scraper::Selector::parse("#StatutoryData_DivFundDetails").unwrap();
     let table_row_selector = scraper::Selector::parse("tr").unwrap();
     let cell_selector = scraper::Selector::parse("td").unwrap();
     document
-        .unwrap()
         .select(&detail_selector)
         .next()
         .unwrap()
@@ -99,15 +99,18 @@ fn get_statutory_data(url: &str) -> std::collections::HashMap<String, String> {
         .collect::<std::collections::HashMap<_, _>>()
 }
 fn get_detailed_information(
-    url: &str,
+    document: &scraper::html::Html,
+    is_reg_28_comliant: bool,
 ) -> std::collections::HashMap<String, String> {
-    let document = get_document(url).unwrap();
     let detail_selector =
         scraper::Selector::parse("#TechnicalDetails_DivFundDetails").unwrap();
     let p_selector = scraper::Selector::parse("p").unwrap();
     let strong_selector = scraper::Selector::parse("strong").unwrap();
     let table_row_selector = scraper::Selector::parse("tr").unwrap();
     let cell_selector = scraper::Selector::parse("td").unwrap();
+    let name_selector =
+        scraper::Selector::parse("#FundHeader1_LblFullname").unwrap();
+    let name = document.select(&name_selector).next().unwrap().inner_html();
     document
         .select(&detail_selector)
         .next()
@@ -132,21 +135,36 @@ fn get_detailed_information(
             };
             (key, val)
         })
+        .chain(vec![("name".into(), name)])
+        .chain(vec![(
+            "reg 28 compliant".into(),
+            if is_reg_28_comliant {
+                "true".into()
+            } else {
+                "false".into()
+            },
+        )])
         .collect::<std::collections::HashMap<_, _>>()
 }
-
 fn get_trusts(url: &str) -> Vec<UnitTrust> {
     let unit_trusts = get_links(&url);
 
     unit_trusts
         .iter()
+        //.take(1)
         .map(|link| {
             let url_query_fragment = link.split('?').collect::<Vec<_>>();
             let fund_details_url =
                 url.to_owned() + "FundDetails.aspx?" + url_query_fragment[1];
-            let info = get_detailed_information(&fund_details_url);
-            let fees = get_fees_and_costs(&fund_details_url);
-            let statutory_info = get_statutory_data(&fund_details_url);
+            let document = get_document(&(url.to_owned() + link)).unwrap();
+            let reg_28_com_selector =
+                scraper::Selector::parse("#FundHeader_Reg28").unwrap();
+            let is_reg_28_comliant =
+                document.select(&reg_28_com_selector).next().is_some();
+            let document = get_document(&fund_details_url).unwrap();
+            let info = get_detailed_information(&document, is_reg_28_comliant);
+            let fees = get_fees_and_costs(&document);
+            let statutory_info = get_statutory_data(&document);
             let mut trust = UnitTrust::from_hash_map(&info);
             trust.fees_and_costs_from_hash(&fees);
             trust.statutory_data_from_hash(&statutory_info);
@@ -166,6 +184,5 @@ fn main() {
     //})
     get_trusts(&base_url)
         .iter()
-        //.take(2)
         .for_each(|trust| print!("{:#?}", trust))
 }
