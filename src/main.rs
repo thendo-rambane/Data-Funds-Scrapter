@@ -166,6 +166,6 @@ fn main() {
     //})
     get_trusts(&base_url)
         .iter()
-        .take(2)
+        //.take(2)
         .for_each(|trust| print!("{:#?}", trust))
 }
