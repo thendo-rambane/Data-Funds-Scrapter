@@ -1,4 +1,7 @@
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StatutoryData {
     fax: String,
     telephone: String,
@@ -39,34 +42,22 @@ impl StatutoryData {
     pub fn from_hash_map(
         hash_map: &std::collections::HashMap<String, String>,
     ) -> Self {
-        let mut stat_data = StatutoryData::new();
-        for (key, value) in hash_map {
-            match key.as_str() {
-                "Fax" => stat_data.fax = value.trim().into(),
-                "Telephone" => stat_data.telephone = value.trim().into(),
-                "Directors" => stat_data.directors = value.trim().into(),
-                "Trustee" => stat_data.trustee = value.trim().into(),
-                "Registration Number" => {
-                    stat_data.registration_number = value.trim().into()
-                }
-                "Postal Address" => {
-                    stat_data.postal_address = value.trim().into()
-                }
-                "Physical Address" => {
-                    stat_data.postal_address = value.trim().into()
-                }
-                "Sponsors" => stat_data.sponsors = value.trim().into(),
-                "Auditors" => stat_data.advisors = value.trim().into(),
-                "Management Company" => {
-                    stat_data.management_company = value.trim().into()
-                }
-                "Advisors" => stat_data.advisors = value.trim().into(),
-                "Tollfree" => stat_data.tollfree = value.trim().into(),
-                "Website" => stat_data.website = value.trim().into(),
-                "Email" => stat_data.email = value.trim().into(),
-                _ => {}
-            }
-        }
-        stat_data
+        let temp = json!({
+            "fax": hash_map["Fax"],
+            "telephone": hash_map["Telephone"],
+            "directors": hash_map["Directors"],
+            "trustee": hash_map["Trustee"],
+            "registration_number": hash_map["Registration Number"],
+            "postal_address": hash_map["Postal Address"],
+            "physical_address": hash_map["Physical Address"],
+            "sponsors": hash_map["Sponsors"],
+            "auditors": hash_map["Auditors"],
+            "management_company": hash_map["Management Company"],
+            "advisors": hash_map["Advisors"],
+            "tollfree": hash_map["Tollfree"],
+            "website": hash_map["Website"],
+            "email": hash_map["Email"],
+        });
+        serde_json::from_value(temp).unwrap()
     }
 }

@@ -84,7 +84,7 @@ fn get_statutory_data(
         .map(|row| {
             let mut cells = row.select(&cell_selector);
             let key = if let Some(key_data) = cells.next() {
-                key_data.text().collect::<String>()
+                key_data.text().collect::<String>().trim().into()
             } else {
                 "Error No Key".into()
             };
@@ -97,6 +97,11 @@ fn get_statutory_data(
             (key, val)
         })
         .collect::<std::collections::HashMap<_, _>>()
+}
+fn get_returns(
+    document: &scraper::html::Html,
+) -> std::collections::HashMap<String, String> {
+    todo!("Get returns Data")
 }
 fn get_detailed_information(
     document: &scraper::html::Html,
@@ -133,7 +138,7 @@ fn get_detailed_information(
             } else {
                 String::new()
             };
-            (key, val)
+            (key.trim().into(), val)
         })
         .chain(vec![("name".into(), name)])
         .chain(vec![(
@@ -148,41 +153,29 @@ fn get_detailed_information(
 }
 fn get_trusts(url: &str) -> Vec<UnitTrust> {
     let unit_trusts = get_links(&url);
-
     unit_trusts
         .iter()
-        //.take(1)
+        .take(1)
         .map(|link| {
             let url_query_fragment = link.split('?').collect::<Vec<_>>();
             let fund_details_url =
                 url.to_owned() + "FundDetails.aspx?" + url_query_fragment[1];
-            let document = get_document(&(url.to_owned() + link)).unwrap();
+            let document = get_document(&fund_details_url).unwrap();
             let reg_28_com_selector =
                 scraper::Selector::parse("#FundHeader_Reg28").unwrap();
             let is_reg_28_comliant =
                 document.select(&reg_28_com_selector).next().is_some();
-            let document = get_document(&fund_details_url).unwrap();
             let info = get_detailed_information(&document, is_reg_28_comliant);
             let fees = get_fees_and_costs(&document);
             let statutory_info = get_statutory_data(&document);
-            let mut trust = UnitTrust::from_hash_map(&info);
-            trust.fees_and_costs_from_hash(&fees);
-            trust.statutory_data_from_hash(&statutory_info);
-            trust
+            UnitTrust::from_hash_map(&info, &fees, &statutory_info)
         })
         .collect::<Vec<UnitTrust>>()
 }
 
 fn main() {
     let base_url = String::from("https://www.fundsdata.co.za/fdov2/");
-    //get_links(&base_url).iter().take(1).for_each(|link| {
-    //let url_query_fragment = link.split('?').collect::<Vec<_>>();
-    //let fund_details_url =
-    //base_url.clone() + "FundDetails.aspx?" + url_query_fragment[1];
-    //let stat = get_statutory_data(&fund_details_url);
-    //print!("{:#?}", stat)
-    //})
     get_trusts(&base_url)
         .iter()
-        .for_each(|trust| print!("{:#?}", trust))
+        .for_each(|trust| print!("{}", serde_json::to_string(trust).unwrap()))
 }

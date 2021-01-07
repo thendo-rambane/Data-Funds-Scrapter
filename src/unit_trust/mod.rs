@@ -1,9 +1,11 @@
 mod fees_and_costs;
 mod statutory_info;
 use fees_and_costs::FeesAndCosts;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use statutory_info::StatutoryData;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct UnitTrust {
     formation_date: String,
     is_reg_28_comliant: bool,
@@ -68,8 +70,9 @@ impl UnitTrust {
     }
     pub fn from_hash_map(
         hash_map: &std::collections::HashMap<String, String>,
+        fees_hash_map: &std::collections::HashMap<String, String>,
+        statutory_data_hash_map: &std::collections::HashMap<String, String>,
     ) -> Self {
-        let mut unit_trust = UnitTrust::new();
         fn process_value(value: &str) -> usize {
             value
                 .trim()
@@ -79,56 +82,35 @@ impl UnitTrust {
                 .parse()
                 .unwrap_or(0)
         }
-        for (key, value) in hash_map.iter() {
-            match key.as_str() {
-                "Formation Date" => {
-                    unit_trust.formation_date = value.trim().into();
-                }
-                "Fund Size" => {
-                    unit_trust.fund_size = process_value(value);
-                }
-                "Domicile" => unit_trust.domicile = value.trim().into(),
-                "Reporting Currency" => {
-                    unit_trust.reporting_currency = value.trim().into()
-                }
-                "JSE Code" => unit_trust.jse_code = value.trim().into(),
-                "ISIN" => unit_trust.isin = value.trim().into(),
-                "Number of unitholders" => {
-                    unit_trust.number_of_unit_holders =
-                        process_value(value) as u32
-                }
-                "Pricing" => unit_trust.pricing = value.trim().into(),
-                "ASISA Category" => {
-                    unit_trust.asisa_category = value.trim().into()
-                }
-                "Benchmark" => unit_trust.benchmark = value.trim().into(),
-                "Income Distributions" => {
-                    unit_trust.income_distributions = value.trim().into()
-                }
-                "Income Payment" => {
-                    unit_trust.income_payment = value.trim().into()
-                }
-                "Fund Management" => {
-                    unit_trust.fund_management = value.trim().into()
-                }
-                "Minimum Investment" => {
-                    unit_trust.minimum_investment = process_value(value) as u32
-                }
-                "Minimum Top-Up" => {
-                    unit_trust.minimum_top_up = process_value(value) as u32
-                }
-                "Minimum Monthly" => {
-                    unit_trust.minimum_monthly = process_value(value) as u32
-                }
-                "Risk Rating" => unit_trust.risk_rating = value.trim().into(),
-                "name" => unit_trust.name = value.trim().into(),
-                "reg 28 compliant" => {
-                    unit_trust.is_reg_28_comliant = value.as_str() == "true"
-                }
-                _ => {}
-            }
-        }
-        unit_trust
+        let value = json!({
+            "formation_date": hash_map["Formation Date"],
+            "is_reg_28_comliant": hash_map["reg 28 compliant"] == "true",
+            "fund_size": process_value(&hash_map["Fund Size"]),
+            "domicile": hash_map["Domicile"].trim(),
+            "reporting_currency": hash_map["Reporting Currency"].trim(),
+            "jse_code": hash_map["JSE Code"].trim(),
+            "isin": hash_map["ISIN"].trim(),
+            "pricing": hash_map["Pricing"].trim(),
+            "number_of_unit_holders":
+                process_value(&hash_map["Number of unitholders"]) as u32,
+            "asisa_category": hash_map["ASISA Category"],
+            "benchmark": hash_map["Benchmark"],
+            "name": hash_map["name"],
+            "income_distributions": hash_map["Income Distributions"].trim(),
+            "income_payment": hash_map["Income Payment"].trim(),
+            "fund_management": hash_map["Fund Management"].trim(),
+            "minimum_investment":
+                process_value(&hash_map["Minimum Investment"]) as u32,
+            "minimum_top_up":
+                process_value(&hash_map["Minimum Top-Up"]) as u32,
+            "minimum_monthly":
+                process_value(&hash_map["Minimum Monthly"]) as u32,
+            "risk_rating": hash_map["Risk Rating"],
+            "fees_and_costs": FeesAndCosts::from_hash_map(fees_hash_map),
+            "statutory_data":
+                StatutoryData::from_hash_map(statutory_data_hash_map),
+        });
+        serde_json::from_value(value).unwrap()
     }
 }
 

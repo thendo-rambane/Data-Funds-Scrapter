@@ -1,4 +1,7 @@
-#[derive(Default, Debug)]
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct FeesAndCosts {
     advisor_initial_fee: f32,
     transaction_costs_ratio: f32,
@@ -32,7 +35,6 @@ impl FeesAndCosts {
     pub fn from_hash_map(
         hash_map: &std::collections::HashMap<String, String>,
     ) -> Self {
-        let mut fees_and_costs = FeesAndCosts::new();
         fn process_value(value: &str) -> f32 {
             if let Ok(fee) =
                 value.split('%').collect::<Vec<_>>()[0].parse::<f32>()
@@ -42,39 +44,25 @@ impl FeesAndCosts {
                 0.0
             }
         }
-        for (key, value) in hash_map.iter() {
-            match key.as_str() {
-                "Annual Management Fee" => {
-                    fees_and_costs.annual_management_fee = process_value(value)
-                }
-                "Total TER" => fees_and_costs.total_ter = process_value(value),
-                "Exit Fee" => fees_and_costs.exit_fee = process_value(value),
-                "Trailer Fee" => {
-                    fees_and_costs.trailer_fee = process_value(value)
-                }
-                "TER Performance Fee" => {
-                    fees_and_costs.ter_performance_fee = process_value(value)
-                }
-                "Initial Fee" => {
-                    fees_and_costs.initial_fee = process_value(value)
-                }
-                "Advisor Annual Fee" => {
-                    fees_and_costs.advisor_annual_fee = process_value(value)
-                }
-                "TER" => fees_and_costs.ter = process_value(value),
-                "Transaction Costs Ratio" => {
-                    fees_and_costs.transaction_costs_ratio =
-                        process_value(value)
-                }
-                "Advisor Initial Fee" => {
-                    fees_and_costs.advisor_initial_fee = process_value(value)
-                }
-                "Performance Fee" => {
-                    fees_and_costs.performance_fee = value.trim().into()
-                }
-                _ => {}
-            }
-        }
-        fees_and_costs
+        let temp = json!({
+            "annual_management_fee":
+                process_value(&hash_map["Annual Management Fee"]),
+            "total_ter": process_value(&hash_map["Total TER"]),
+            "advisor_initial_fee":
+                process_value(&hash_map["Advisor Initial Fee"]),
+            "transaction_costs_ratio":
+                process_value(&hash_map["Transaction Costs Ratio"]),
+            "exit_fee": process_value(&hash_map["Exit Fee"]),
+            "advisor_annual_fee":
+                process_value(&hash_map["Advisor Annual Fee"]),
+            "trailer_fee": process_value( &hash_map[ "Trailer Fee" ] ),
+            "ter": process_value( &hash_map[ "TER"] ),
+            "performance_fee":
+                String::from(hash_map[ "Performance Fee" ].trim()),
+            "initial_fee": process_value( &hash_map[ "Initial Fee" ] ),
+            "ter_performance_fee":
+                process_value( &hash_map[ "TER Performance Fee" ] ),
+        });
+        serde_json::from_value(temp).unwrap()
     }
 }
