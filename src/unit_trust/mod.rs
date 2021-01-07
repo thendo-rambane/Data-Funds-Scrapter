@@ -1,6 +1,8 @@
 mod fees_and_costs;
+mod returns;
 mod statutory_info;
 use fees_and_costs::FeesAndCosts;
+use returns::Returns;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use statutory_info::StatutoryData;
@@ -28,6 +30,7 @@ pub struct UnitTrust {
     risk_rating: String,
     fees_and_costs: FeesAndCosts,
     statutory_data: StatutoryData,
+    lump_returns: Returns,
 }
 
 impl UnitTrust {
@@ -54,24 +57,14 @@ impl UnitTrust {
             risk_rating: "".to_owned(),
             fees_and_costs: FeesAndCosts::new(),
             statutory_data: StatutoryData::new(),
+            lump_returns: Returns::new(),
         }
-    }
-    pub fn fees_and_costs_from_hash(
-        &mut self,
-        hash_map: &std::collections::HashMap<String, String>,
-    ) {
-        self.fees_and_costs = FeesAndCosts::from_hash_map(hash_map);
-    }
-    pub fn statutory_data_from_hash(
-        &mut self,
-        hash_map: &std::collections::HashMap<String, String>,
-    ) {
-        self.statutory_data = StatutoryData::from_hash_map(hash_map)
     }
     pub fn from_hash_map(
         hash_map: &std::collections::HashMap<String, String>,
         fees_hash_map: &std::collections::HashMap<String, String>,
         statutory_data_hash_map: &std::collections::HashMap<String, String>,
+        returns_hash: &std::collections::HashMap<String, Option<f32>>,
     ) -> Self {
         fn process_value(value: &str) -> usize {
             value
@@ -109,6 +102,7 @@ impl UnitTrust {
             "fees_and_costs": FeesAndCosts::from_hash_map(fees_hash_map),
             "statutory_data":
                 StatutoryData::from_hash_map(statutory_data_hash_map),
+            "lump_returns":Returns::from_hash_map(returns_hash),
         });
         serde_json::from_value(value).unwrap()
     }
