@@ -6,6 +6,7 @@ use returns::Returns;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use statutory_info::StatutoryData;
+pub mod services;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UnitTrust {
